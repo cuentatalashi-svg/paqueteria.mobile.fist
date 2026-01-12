@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ctrl-paqueteria — App</title>
+
+  <!-- INICIO ETIQUETAS PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0a360a">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+  <!-- FIN ETIQUETAS PWA -->
+
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Estilos (con corrección de footer fijo) -->
+  <style>
+    /* CORRECCIÓN DE LAYOUT DE MODAL DE FIRMA:
+      - Se usa display: flex (column) para el .modal-content.
+      - El .modal-body (centro) es el único que crece (flex-grow: 1) y es el único que se desplaza (overflow-y: auto).
+      - El .modal-footer (pie de página) NO crece (flex-shrink: 0) y ahora se hace "pegajoso" (sticky).
+    */
+    #firmaModal .modal-content {
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+      /* Altura máxima del modal */
+      max-height: 90vh;
+      width: 95vw;
+      max-width: 540px;
+      box-sizing: border-box;
+      padding: 0;
+      /* IMPORTANTE: overflow: hidden; (o auto) NO debe estar aquí, sino en el .modal-body */
+    }
+
+    #firmaModal .modal-header {
+      flex-shrink: 0;
+      /* No se encoge */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid #eee;
+    }
+
+    #firmaModal .modal-header h4 {
+      margin: 0;
+      font-size: 1.1em;
+    }
+
+    #firmaModal .modal-header #cerrarFirma {
+      position: static;
+      float: none;
+      padding: 4px 8px;
+      font-size: 16px;
+    }
+
+    /* El cuerpo (body) es el único que debe crecer y tener scroll */
+    #firmaModal .modal-body {
+      flex-grow: 1;
+      /* Ocupa todo el espacio disponible */
+      overflow-y: auto;
+      /* AÑADE SCROLL si el contenido (canvas, foto) se pasa */
+      padding: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #firmaModal #firmaCanvas {
+      max-width: 100%;
+      height: 200px;
+      box-sizing: border-box;
+    }
+
+    #firmaModal #limpiarFirma {
+      margin-bottom: 16px;
+    }
+
+    /* El pie de página (footer) se mantiene fijo abajo */
+    #firmaModal .modal-footer {
+      flex-shrink: 0;
+      /* No se encoge */
+      padding: 16px;
+      border-top: 1px solid #eee;
+      background-color: #f9f9f9;
+
+      /* --- ★★★ LA CORRECCIÓN ESTÁ AQUÍ ★★★ --- */
+      position: sticky;
+      /* Se "pega" al borde */
+      bottom: 0;
+      /* Al borde inferior de su contenedor (.modal-content) */
+      z-index: 10;
+      /* Se asegura de que esté por encima del contenido del body al hacer scroll */
+    }
+
+    #firmaModal .modal-footer .row {
+      margin-top: 0;
+    }
+
+    /* --- Resto de estilos (sin cambios) --- */
+    /*
+      ★★★ ELIMINACIÓN DE CUADRO NEGRO DEL TOAST ★★★
+      Quito la animación 'toastFadeOut' que forzaba el fin y causaba un parpadeo.
+      Ahora el CSS solo maneja la entrada (fade-in) y la salida (usando 'hiding' y transition).
+    */
+    .toast-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 18px 25px;
+      border-radius: 12px;
+      background-color: rgba(30, 30, 30, 0.95);
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      z-index: 10000;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      animation: none;
+    }
+
+    .toast-container.show {
+      opacity: 1;
+      pointer-events: auto;
+      animation: toastFadeIn 0.3s ease-out forwards;
+    }
+
+    .toast-container.hiding {
+      opacity: 0;
+      transform: translate(-50%, -60%);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      animation: none;
+    }
+
+    .toast-icon {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+    }
+
+    .toast-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .toast-message {
+      font-size: 1.1em;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .toast-container.success {
+      background-color: #28a745;
+    }
+
+    .toast-container.error {
+      background-color: #dc3545;
+    }
+
+    .toast-container.info {
+      background-color: #007bff;
+    }
+
+    .toast-container.loading {
+      background-color: rgba(30, 30, 30, 0.95);
+    }
+
+    .toast-icon .spinner {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes toastFadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Estilos del nuevo escáner (ZXing) */
+    #scannerModal {
+      padding: 0;
+      background: rgba(0, 0, 0, 0.9);
+      /* Mostrar en pantalla completa */
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    #scannerModal .modal-content {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      max-height: none;
+      background: #000;
+      border-radius: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      /* Para posicionar elementos internos */
+    }
+
+    #scanner-video {
+      /* Ocupa todo el espacio, manteniendo la proporción */
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #scannerModal .scanner-ui {
+      /* Controles superpuestos */
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none;
+      /* No bloquear el video */
+    }
+
+    #scannerStatus {
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      text-align: center;
+      padding: 12px;
+      font-weight: 600;
+    }
+
+    #scannerModal .scanner-footer {
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      pointer-events: auto;
+      /* El botón SÍ debe ser clickeable */
+    }
+
+    #stopScannerBtn {
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      padding: 12px 20px;
+      font-size: 16px;
+    }
+
+    /* Línea de escaneo (opcional, visual) */
+    .scan-line {
+      position: absolute;
+      left: 5%;
+      right: 5%;
+      top: 50%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.8), transparent);
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+      border-radius: 2px;
+      animation: scan-anim 3s linear infinite;
+    }
+
+    @keyframes scan-anim {
+      0% {
+        top: 10%;
+      }
+
+      50% {
+        top: 90%;
+      }
+
+      100% {
+        top: 10%;
+      }
+    }
+  </style>
+
+</head>
+
+<body class="page-main">
+  <!-- Header (sin cambios) -->
+  <header class="app-header">
+    <div class="brand-mini">
+      <h1>ctrl-paqueteria</h1>
+      <div id="saludo" class="muted">Buen turno</div>
+    </div>
+    <div><button id="logoutBtn" class="btn ghost">Cerrar sesión</button></div>
+  </header>
+
+  <!-- Contenido Principal (con botón de escáner) -->
+  <main id="app-main-container" class="app-main container show-paqueteria">
+    <div class="screens-wrapper">
+      <section id="screen-paqueteria" class="screen card">
+        <h3>Registrar Paquetería 📦</h3>
+        <div class="block">
+          <!-- Campo Domicilio: ahora es requerido en app.js -->
+          <label class="field"><span>Domicilio (Obligatorio)</span><input id="domicilioInput"
+              placeholder="Busca o escribe el domicilio" list="domList" /><datalist id="domList"></datalist></label>
+          <label class="field">
+            <span>Escanea o escribe la guía (Permite Letras y Números)</span>
+            <!-- Input de guía con botón de escáner (modificado) -->
+            <div class="field-with-button">
+              <!-- inputmode='text' para permitir letras y números, y quitamos maxlength numérico -->
+              <input id="guia" inputmode="text" maxlength="50" placeholder="Escribe o escanea la guía" />
+              <!-- Botón más grande con ícono de QR azul -->
+              <button id="startScannerBtn" class="btn primary icon-btn" aria-label="Escanear código QR/Barras">
+                <!-- Icono SVG de código QR -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                  <path fill="currentColor"
+                    d="M3 3h8v8H3V3m2 2v4h4V5H5m13 8h-2v2h2v-2m-2-2h-2v2h2v-2m2 4h-2v2h2v-2m2-2h-2v2h2v-2m-2 4h-2v2h2v-2M15 3h6v6h-6V3m2 2v2h2V5h-2m-8 6h2v2h-2v-2m-2 2H7v-2h2v2m-2-2h2v-2H7v2m-2 2h2v-2H5v2m16-4h-2v2h2v-2m-8 8h-2v2h2v-2m-2-2h-2v2h2v-2m-2 4h-2v2h2v-2M3 15h6v6H3v-6m2 2v2h2v-2zM15 15h2v2h-2v-2m-2 2h-2v2h2v-2m-2-2h-2v2h2v-2m2 4h-2v2h2v-2m2-2h-2v2h2v-2m2 4h-2v2h2v-2m-4-6h2v2h-2v-2m2 4h2v-2h-2v2M12 21h-2v-2h2v2m2-4h-2v-2h2v2m2-4h-2v-2h2v2m2-4h-2v-2h2v2M17 3v2h2V3h-2m-6 6h-2v2h2V9m-4 2h-2v2h2v-2m6-6h2v2h-2V5M5 11h2v2H5v-2m-2 2h2v2H3v-2m14 6h-2v2h2v-2m-6 0h-2v-2h2v2m-2-4h-2v-2h2v2m2-2h-2v2h2v-2M9 5h2v2H9V5M5 7h2v2H5V7m14-2v2h2V5h-2M7 15h2v2H7v-2M9 19h2v2H9v-2M5 17h2v2H5v-2M15 19h2v-2h-2v2m2-4h2v2h-2v-2m2-2h2v2h-2v-2m-2 4h-2v-2h2v2m-2 2h-2v-2h2v2" />
+                </svg>
+              </button>
+            </div>
+            <datalist id="guiaList"></datalist>
+            <div id="guiaSuggestions" class="suggestions"></div>
+          </label>
+        </div>
+        <div class="block">
+          <label class="field"><span>¿A qué nombre está el paquete?</span><input id="nombreDest"
+              placeholder="Nombre destinatario" list="nombresList" /><datalist id="nombresList"></datalist></label>
+          <label class="field"><span>Paquetería</span><input id="paqueteriaInput"
+              placeholder="Selecciona o escribe paquetería" list="paqList" /><datalist id="paqList"></datalist></label>
+        </div>
+        <div class="block">
+          <label class="field"><span>Comentarios (Opcional)</span><textarea id="comentariosPaquete" rows="2"
+              placeholder="Ej: Paquete dañado, recibió doméstica, etc."></textarea></label>
+        </div>
+        <div class="block">
+          <label class="file-btn field"><input id="fotoInput" accept="image/*" type="file"
+              capture="environment" /><button id="fotoBtn" class="btn ghost full">📸 Tomar foto del
+              paquete</button></label>
+          <div id="fotoPreview" class="preview"></div>
+        </div>
+        <div class="field radio-group">
+          <span>¿Desea notificar al residente?</span>
+          <label><input type="radio" id="notificarSi" name="notificarPaquete" value="si" checked><span>Sí, enviar
+              notificación</span></label>
+          <label><input type="radio" id="notificarNo" name="notificarPaquete" value="no"><span>No
+              notificar</span></label>
+        </div>
+        <div class="row">
+          <button id="recibirBtn" class="btn primary">Recibir paquete</button>
+          <button id="entregarBtn" class="btn">Entregar paquete</button>
+          <button id="entregarVariosBtn" class="btn hidden" disabled>Entregar (Varios)</button>
+        </div>
+      </section>
+      <section id="screen-directorio" class="screen card">
+        <h3>Directorio 📓</h3>
+        <form id="domForm">
+          <label class="field"><span>Domicilio</span><input id="domCalle" placeholder="Calle, Nº, Torre, Piso..."
+              required /></label>
+          <label class="field"><span>Residente (op1)</span><input id="domResidente1" placeholder="Nombre residente"
+              required /></label>
+          <label class="field"><span>Teléfono (para Notificaciones)</span><input id="domTelefono" type="tel"
+              placeholder="Ej: 521XXXXXXXXXX" /><span class="muted" style="font-size: 11px; margin-top: 4px;">Incluir
+              cód. de país + cód. de área + número (todo junto). Ej: 521...</span></label>
+          <label class="field"><span>Nota</span><textarea id="domNota" rows="2"
+              placeholder="Nota (puerta, referencia...)"></textarea></label>
+          <div id="moreResidents"></div>
+          <div class="row">
+            <button id="addResident" type="button" class="btn ghost">Añadir más residentes</button>
+            <button id="saveDomicilio" type="submit" class="btn primary">Guardar</button>
+          </div>
+        </form>
+        <h4>Tabla domicilios</h4>
+        <div id="tablaDomicilios" class="table"></div>
+      </section>
+      <section id="screen-historial" class="screen card">
+        <h3>Historial de paquetes 📦</h3>
+        <div class="filters">
+          <input id="buscarHist" placeholder="Buscar por guía, nombre o estado" />
+          <select id="filtroEstado">
+            <option value="">Todos</option>
+            <option value="en_caseta">En caseta</option>
+            <option value="entregado">Entregado</option>
+          </select>
+          <div class="filter-date-range">
+            <label class="date-picker-btn"><span id="fechaDesdeLabel">🗓️ Desde</span><input type="date"
+                id="fechaDesde"></label>
+            <span class="date-range-separator">a</span>
+            <label class="date-picker-btn"><span id="fechaHastaLabel">🗓️ Hasta</span><input type="date"
+                id="fechaHasta"></label>
+          </div>
+        </div>
+        <div id="historialContador" class="contador"></div>
+        <div id="historialPaquetes" class="historial-container"></div>
+      </section>
+      <section id="screen-admin" class="screen card">
+        <h3>Panel de Administrador 🛡️</h3>
+        <!-- BLOQUE PDF ELIMINADO AQUI -->
+        <div class="block">
+          <h4>Respaldo de Datos</h4>
+          <p class="muted">Guarda o restaura toda la base de datos (paquetes, usuarios, etc).
+            <strong>¡Importante!</strong>
+          </p>
+          <div class="row"><button id="exportBackupBtn" class="btn ghost full">Exportar Respaldo (JSON)</button></div>
+          <div class="row" style="margin-top: 10px;">
+            <input type="file" id="restoreBackupInput" accept="application/json" style="display:none;" />
+            <button id="restoreBackupBtn" class="btn danger full">Restaurar desde Respaldo</button>
+          </div>
+        </div>
+        <div class="block">
+          <h4>Gestionar Usuarios</h4>
+          <button id="refreshUsersBtn" class="btn ghost full">Refrescar Lista de Usuarios</button>
+          <div id="tablaUsuarios" class="table" style="margin-top: 10px;"></div>
+        </div>
+        <div class="block">
+          <p class="muted" style="font-size: 12px; text-align: center;">Código de registro de admin: <strong
+              style="color: #333;">ADMIN123</strong></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modales (sin cambios de HTML, solo de estilo) -->
+  <div id="confirmEntregarModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Confirmar Entrega</h3>
+      <p id="confirmEntregarMsg">¿Estás seguro?</p>
+      <div class="row"><button id="cancelEntregarBtn" class="btn ghost full">Cancelar</button><button
+          id="confirmEntregarBtn" class="btn primary full">Continuar a Firma</button></div>
+    </div>
+  </div>
+  <div id="confirmEntregarVariosModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Confirmar Entrega Múltiple</h3>
+      <p>Se entregarán los siguientes paquetes "en caseta" para el domicilio:</p><strong
+        id="domicilioVariosTxt"></strong>
+      <div id="listaPaquetesVarios"></div>
+      <p class="muted">Se usará una sola firma y foto de ID para todos.</p>
+      <div class="row"><button id="cancelVariosBtn" class="btn ghost full">Cancelar</button><button
+          id="confirmVariosBtn" class="btn primary full">Continuar a Firma</button></div>
+    </div>
+  </div>
+  <div id="deleteConfirmModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Confirmar Eliminación</h3>
+      <p id="deleteConfirmMsg">¿Estás seguro de que quieres eliminar este registro? Esta acción no se puede deshacer.
+      </p>
+      <div class="row"><button id="deleteCancelBtn" class="btn ghost full">Cancelar</button><button
+          id="deleteConfirmBtn" class="btn danger full">Eliminar Permanentemente</button></div>
+    </div>
+  </div>
+  <div id="firmaModal" class="modal modal-scrollable hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4>Dibuje su firma</h4><button id="cerrarFirma" class="btn ghost">X</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted" style="margin-top:0; margin-bottom: 10px;">Dibuje su firma dentro del recuadro:</p><canvas
+          id="firmaCanvas"></canvas><button id="limpiarFirma" class="btn ghost full">Limpiar</button>
+
+        <!-- NUEVO CAMPO: SE ENTREGA A -->
+        <label class="field" style="margin-top: 20px;"><span>¿Quién recibe el paquete? (Opcional)</span><input
+            id="entregadoAInput" placeholder="Ej: Juan Pérez (Personal de limpieza), Mismo residente..." /></label>
+
+        <label class="file-btn field" style="margin-top: 10px;"><input id="idFotoInput" accept="image/*" type="file"
+            capture="environment" /><button id="idFotoBtn" class="btn ghost full">🆔 Tomar foto de ID
+            (Obligatorio)</button></label>
+        <div id="idPreview" class="preview"></div>
+        <div class="field radio-group" style="margin-top: 20px;"><span>¿Desea notificar al
+            residente?</span><label><input type="radio" id="notificarEntregaSi" name="notificarEntrega" value="si"
+              checked><span>Sí, enviar notificación</span></label><label><input type="radio" id="notificarEntregaNo"
+              name="notificarEntrega" value="no"><span>No notificar</span></label></div>
+      </div>
+      <div class="modal-footer">
+        <div class="row"><button id="guardarFirma" class="btn primary full">Guardar firma y finalizar</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="imageViewer" class="modal hidden">
+    <div class="viewer-content"><button id="closeImageViewer" class="btn ghost"
+        style="position:absolute;right:14px;top:14px; z-index: 10;">X</button><button id="prevImg" class="btn ghost"
+        style="position:absolute;left:14px;top:50%; transform: translateY(-50%); z-index: 10;">◀</button><img
+        id="viewerImg" src="" alt="imagen" /><button id="nextImg" class="btn ghost"
+        style="position:absolute;right:14px;top:50%; transform: translateY(-50%); z-index: 10;">▶</button>
+      <div id="viewerMeta" class="muted"
+        style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: white; padding: 5px 10px; border-radius: 5px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal del Escáner (ZXing) -->
+  <div id="scannerModal" class="modal hidden">
+    <div class="modal-content">
+      <video id="scanner-video"></video>
+      <div class="scanner-ui">
+        <div id="scannerStatus">Iniciando cámara...</div>
+        <!-- CORRECCIÓN: Se quitó la 's' extra de 'classs' -->
+        <div class="scan-line"></div>
+        <div class="scanner-footer">
+          <button id="stopScannerBtn" class="btn">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastNotification" class="toast-container">
+    <div id="toastIcon" class="toast-icon"></div>
+    <div id="toastMessage" class="toast-message">Mensaje de notificación</div>
+  </div>
+
+  <!-- Nav (sin cambios) -->
+  <nav class="bottom-nav">
+    <button data-screen="screen-paqueteria" class="nav-btn active">📦 Paquetería</button>
+    <button data-screen="screen-directorio" class="nav-btn">📓 Directorio</button>
+    <button data-screen="screen-historial" class="nav-btn">🕓 Historial</button>
+    <button data-screen="screen-admin" id="nav-btn-admin" class="nav-btn nav-btn-admin hidden">🛡️ Admin</button>
+  </nav>
+
+  <!-- Scripts de la App (SIN JSPDF) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" id="supabase-sdk"></script>
+  <script>
+    // Verificar si Supabase cargó correctamente desde el CDN principal
+    // Si falla (común en móviles con conexión débil), intentar CDN alternativo
+    setTimeout(function () {
+      if (!window.supabase || typeof window.supabase.createClient === 'undefined') {
+        console.warn('⚠️ CDN principal de Supabase falló o tardó mucho. Intentando CDN fallback...');
+        var fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://unpkg.com/@supabase/supabase-js@2';
+        fallbackScript.id = 'supabase-sdk-fallback';
+        fallbackScript.onerror = function () {
+          console.error('❌ Ambos CDN de Supabase fallaron. Verifica tu conexión.');
+          alert('⚠️ No se pudo cargar Supabase desde ningún CDN.\\n\\nVerifica tu conexión a internet y recarga la página.');
+        };
+        document.head.appendChild(fallbackScript);
+      } else {
+        console.log('✅ Supabase SDK cargado desde CDN principal.');
+      }
+    }, 2000); // Esperar 2 segundos para que cargue el CDN principal
+  </script>
+  <script src="supabase-client.js"></script>
+  <script src="zxing.min.js"></script>
+  <script src="sql-lite.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

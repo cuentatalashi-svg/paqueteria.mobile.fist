@@ -1,0 +1,884 @@
+/* styles.css final */
+:root{
+  /* --- PALETA VERDE --- */
+  --green-dark:#0a360a; /* Oscuro para fondo principal / Header */
+  --green-700:#114e11; /* Oscuro intermedio para panel login */
+  --green-500:#28a745; /* Primario / Botones / Acentos */
+  --green-300:#7fd496; /* Acento claro para brillos / Login */
+  --accent-red:#d9534f;
+  
+  /* --- INICIO NUEVA PALETA LOGIN --- */
+  --login-bg: var(--green-dark); /* Verde oscuro para fondo */
+  --login-panel-bg: var(--green-700); /* Verde más oscuro para panel info */
+  --login-accent: var(--green-300); /* Acento verde claro para bordes y brillos */
+  --login-text: #ffffff; /* Texto blanco */
+  --login-muted: #e2e8f0; /* Texto/bordes atenuados */
+  /* --- FIN NUEVA PALETA LOGIN --- */
+
+  --rojo-fondo: #fef2f2;
+  --rojo-borde: #b91c1c;
+  --rojo-texto: #991b1b;
+  --verde-fondo: #f0fdf4;
+  --verde-borde: #15803d;
+  --verde-texto: #14532d;
+  
+  --pink:#ffb6c1;
+  --surface:#f6f9fc;
+  --muted:#6b7280;
+  --card-radius:12px;
+  --gap:12px;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+
+*{box-sizing:border-box}
+html{
+  min-height: 100%; 
+}
+body{
+  margin:0;
+  background:linear-gradient(180deg,var(--surface),#fff);
+  color:#05203b;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding-bottom:84px; /* space for bottom nav */
+  min-height: 100vh; 
+}
+/* Asegurar que el body de login no tenga padding extra abajo si no es necesario */
+.page-login {
+  padding-bottom: 0;
+}
+
+
+/* --- ESTILO LOGIN CENTRADO --- */
+.page-login .brand {
+  text-align: center; /* Centrar texto del header */
+  margin-bottom: 20px;
+}
+.page-login .brand h1 {
+  color: var(--green-dark); /* Ajuste de color */
+}
+.page-login .brand .subtitle {
+  color: var(--muted);
+}
+/* Ocultar span de field en login */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+/* --- FIN ESTILO LOGIN CENTRADO --- */
+
+
+/* header */
+.app-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:linear-gradient(90deg,var(--green-dark),var(--green-700));color:white}
+.brand-mini h1{margin:0;font-size:18px}
+.brand-mini .muted{font-size:13px;color:rgba(255,255,255,0.95)}
+
+/* main container */
+.container{max-width:920px;margin:0 auto;padding:12px}
+.page-login .container {
+  padding-bottom: 0; /* No necesita padding de container normal */
+}
+
+/* cards / screens */
+.card{background:white;border-radius:var(--card-radius);padding:14px;box-shadow:0 6px 18px rgba(11,37,69,0.06);margin-bottom:var(--gap)}
+/* .screen.hidden{display:none} -> Ya no se usa .hidden para pantallas */
+
+
+/* --- INICIO ANIMACIÓN DESLIZAMIENTO SCREENS --- */
+.app-main {
+  overflow: hidden; /* Oculta las pantallas fuera de vista */
+  /* Quitar padding lateral para que el wrapper ocupe todo */
+  padding: 12px 0; 
+}
+
+.screens-wrapper {
+  display: flex;
+  width: 400%; /* 4 pantallas */
+  transition: transform 0.4s ease-in-out;
+  
+  /* ★★★ CORRECCIÓN #1: Evitar que las tarjetas se estiren al alto de la más grande (Historial) ★★★ */
+  align-items: flex-start; 
+}
+
+.screen {
+  width: 25%; /* Cada pantalla ocupa 1/4 del wrapper */
+  flex-shrink: 0;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* ★★★ CORRECCIÓN #2: Scroll interno para formularios (Excepto Historial) ★★★ 
+   Esto fija la altura máxima y permite hacer scroll DENTRO de la tarjeta blanca */
+#screen-paqueteria, #screen-directorio, #screen-admin {
+  max-height: calc(100vh - 150px); /* Altura total menos Header, Nav y márgenes aprox */
+  overflow-y: auto; /* Scroll vertical automático */
+  -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+}
+
+
+/* Controlar la posición del wrapper */
+.app-main.show-paqueteria .screens-wrapper {
+  transform: translateX(0);
+}
+.app-main.show-directorio .screens-wrapper {
+  transform: translateX(-25%);
+}
+.app-main.show-historial .screens-wrapper {
+  transform: translateX(-50%);
+}
+.app-main.show-admin .screens-wrapper {
+  transform: translateX(-75%);
+}
+/* --- FIN ANIMACIÓN DESLIZAMIENTO SCREENS --- */
+
+
+.field{display:block;margin-bottom:10px}
+.field span{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+input,textarea,select{
+  width:100%;
+  padding:10px 12px;
+  border-radius:8px;
+  border:1px solid #e2e8f0;
+  font-size:15px;
+  outline:none;
+}
+textarea{resize:vertical}
+.row{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+  flex-wrap: wrap; /* Para que los botones se apilen si no caben */
+}
+.btn{
+  padding:10px 12px;
+  border-radius:10px;
+  border:0;
+  background:transparent;
+  font-weight:600;
+  cursor: pointer;
+}
+.btn.full{flex:1 1 100%;} /* Asegura que .full ocupe todo el ancho al apilarse */
+.btn.primary{background:var(--green-500);color:white} /* Color primario VERDE */
+.btn.ghost{border:1px solid rgba(5,32,59,0.06);background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05);}
+
+/* --- INICIO NUEVOS BOTONES --- */
+.btn.danger {
+  background: var(--rojo-borde);
+  color: white;
+}
+.btn.danger-ghost {
+  background: var(--rojo-fondo);
+  color: var(--rojo-texto);
+  border: 1px solid var(--rojo-fondo);
+  font-weight: 600;
+}
+.nav-btn-admin {
+  color: var(--rojo-texto); /* Color distintivo para admin */
+}
+/* --- FIN NUEVOS BOTONES --- */
+
+
+.muted{color:var(--muted);font-size:13px}
+
+.btn:disabled {
+  background: #f1f5f9; /* Color grisáceo */
+  color: #94a3b8; /* Color de texto apagado */
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+/* suggestions */
+.suggestions{position:relative;margin-top:6px}
+.suggestions ul{list-style:none;padding:6px;margin:0;border-radius:8px;background:#fff;border:1px solid #e6eefb;max-height:160px;overflow:auto}
+.suggestions li{padding:8px;border-bottom:1px dashed #f1f5f9;cursor:pointer}
+.suggestions li:hover{background:#f1f8ff}
+
+/* preview images */
+.preview img{
+  width:120px;
+  height:120px;
+  object-fit:cover;
+  border-radius:8px;
+  margin-top:8px;
+  display:inline-block; /* Centrar con text-align */
+}
+/* --- INICIO VISTA PREVIA FOTO PERFIL --- */
+#regFotoPreview img {
+  border-radius: 50%; /* Foto de perfil circular */
+  border: 3px solid var(--login-accent);
+}
+/* --- FIN VISTA PREVIA FOTO PERFIL --- */
+
+
+/* thumbnails in historial */
+.thumb{
+  width: 80px; /* Más pequeño para la galería de tarjeta */
+  height: 80px;
+  object-fit:cover;
+  border-radius:8px;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s ease;
+}
+.thumb:hover {
+  transform: scale(1.05);
+}
+.thumb-firma{
+  background-color:#fff; 
+  border: 1px solid #e2e8f0; /* Borde suave para ver el recuadro */
+  object-fit: contain; /* Para que la firma no se corte */
+  padding: 4px; /* Pequeño espacio interno */
+}
+.thumb-miniatura {
+  width: 40px; /* Tamaño más pequeño para el modal */
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #e2e8f0; /* Un borde sutil */
+}
+
+/* modal viewer */
+#imageViewer{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(3,6,23,0.85);padding:16px;z-index:60}
+.viewer-content{position:relative;max-width:920px;width:100%;display:flex;align-items:center;justify-content:center}
+.viewer-content img{max-width:100%;max-height:85vh;border-radius:10px;box-shadow:0 8px 30px rgba(2,6,23,0.4)}
+#imageViewer.hidden{display:none}
+
+/* modal signature */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(3,6,23,0.35);padding:16px;z-index:50}
+.modal .modal-content{background:white;padding:12px;border-radius:10px;max-width:420px;width:100%}
+.modal.hidden{display:none}
+
+.modal.modal-scrollable {
+  align-items: flex-start;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.modal.modal-scrollable .modal-content {
+  max-height: calc(100vh - 40px); /* Altura de la pantalla menos el padding */
+  /* --- CORRECCIÓN 1: Quitar overflow-y. El overflow debe estar en .modal-body (definido en main.html) --- */
+  /* overflow-y: auto; */ 
+  /* --- FIN CORRECIÓN 1 --- */
+  max-width: 600px; 
+}
+
+
+#confirmEntregarMsg {
+  margin-bottom: 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* --- ESTILOS MODAL VARIOS --- */
+#domicilioVariosTxt {
+  color: var(--green-dark); /* Ajuste de color */
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+#listaPaquetesVarios {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+#listaPaquetesVarios ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+#listaPaquetesVarios li {
+  font-size: 14px;
+  padding: 8px 4px; 
+  border-bottom: 1px dashed #f1f5f9;
+  line-height: 1.4; 
+}
+#listaPaquetesVarios li:last-child {
+  border-bottom: none;
+}
+#listaPaquetesVarios li .info-paquete {
+  font-size: 12px;
+  color: var(--muted); 
+  margin-top: 2px;
+}
+
+/* signature canvas styling */
+#firmaCanvas{display:block;border:2px dashed #cfe6ff;border-radius:8px;margin:10px auto 6px;touch-action:none;max-width:100%}
+
+/* bottom nav */
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;height:64px;background:white;border-top:1px solid #e6eefb;display:flex;justify-content:space-around;align-items:center;z-index:70}
+.nav-btn{background:transparent;border:0;padding:8px 12px;font-weight:700}
+.nav-btn.active{color:var(--green-700)} /* Color nav activo VERDE */
+
+/* table */
+.table{max-height:420px;overflow:auto;margin-top:8px}
+.table .row{display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:1px solid #f1f5f9;font-size:14px;
+  border-left: 4px solid transparent; /* Borde base */
+  transition: background-color 0.3s ease;
+  flex-wrap: wrap; /* Para que las miniaturas se apilen si no caben */
+}
+.table .info{flex:1; min-width: 150px;} /* Asegura un ancho mínimo para la info */
+
+/* INICIO MODIFICACIÓN: Estilo para tel en tabla directorio */
+.table .info .telefono {
+  font-size: 13px;
+  color: var(--green-700); /* Ajuste de color */
+  font-weight: 500;
+  margin-top: 4px;
+}
+/* FIN MODIFICACIÓN */
+
+
+/* --- INICIO NUEVO LAYOUT DE HISTORIAL --- */
+.historial-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+.historial-card {
+  background: #fff;
+  border-radius: var(--card-radius);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(11,37,69,0.04);
+  overflow: hidden; /* Para contener los bordes */
+}
+.historial-card .card-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.historial-card .card-header strong {
+  color: var(--green-dark); /* Ajuste de color */
+  font-size: 16px;
+  display: block;
+  margin-bottom: 2px;
+}
+.historial-card .card-header .guia {
+  font-size: 13px;
+  color: var(--muted);
+  /* --- CORRECCIÓN 3b: Permitir que el texto se ajuste --- */
+  line-height: 1.4;
+}
+.historial-card .card-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.historial-card .card-section {
+  font-size: 14px;
+}
+.historial-card .card-section .label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: block;
+}
+.historial-card .comentarios {
+  background: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-style: italic;
+  color: #334155;
+  border-left: 3px solid var(--green-300); /* Ajuste de color */
+}
+.historial-card .trazabilidad {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+}
+.guardia-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.guardia-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+  background: #f1f5f9; /* Fallback si no hay foto */
+}
+.guardia-info-texto {
+  display: flex;
+  flex-direction: column;
+}
+.guardia-info-texto .fecha {
+  font-size: 12px;
+  color: var(--muted);
+}
+.galeria-thumbs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.card-footer {
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end; /* Alinea botones a la derecha */
+  gap: 8px;
+}
+
+/* Colores de estado para la tarjeta */
+.historial-card.estado-en_caseta {
+  border-left: 5px solid var(--rojo-borde);
+}
+.historial-card.estado-entregado {
+  border-left: 5px solid var(--verde-borde);
+}
+.historial-card.estado-en_caseta .estado-tag {
+  background: var(--rojo-fondo);
+  color: var(--rojo-texto);
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+.historial-card.estado-entregado .estado-tag {
+  background: var(--verde-fondo);
+  color: var(--verde-texto);
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+/* --- FIN NUEVO LAYOUT DE HISTORIAL --- */
+
+
+.table .row.estado-en_caseta {
+  background-color: var(--rojo-fondo);
+  border-left-color: var(--rojo-borde);
+}
+.table .row.estado-entregado {
+  background-color: var(--verde-fondo);
+  border-left-color: var(--verde-borde);
+}
+
+/* --- INICIO NUEVO ESTILO CONTADOR --- */
+.contador {
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin: 10px 0;
+}
+/* --- FIN NUEVO ESTILO CONTADOR --- */
+
+/* --- INICIO NUEVO ESTILO RADIO BUTTONS --- */
+.radio-group {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+}
+.radio-group span {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.radio-group input[type="radio"] {
+  width: auto; /* Ancho natural */
+  accent-color: var(--green-500); /* Color del check VERDE */
+}
+/* --- FIN NUEVO ESTILO RADIO BUTTONS --- */
+
+
+/* ****** INICIO NUEVOS ESTILOS DE FILTRO ****** */
+.filters {
+  display: flex;
+  flex-wrap: wrap; /* Permitir que los filtros pasen a la siguiente línea si no caben */
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Ocupar todo el ancho en los filtros principales */
+.filters #buscarHist,
+.filters #filtroEstado {
+  width: 100%;
+}
+
+.filter-date-range {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Distribuir espacio */
+  width: 100%;
+  gap: 8px;
+}
+
+.date-range-separator {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.date-picker-btn {
+  /* Apariencia de input/botón */
+  flex: 1; /* Ocupar espacio disponible */
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff; /* Fondo blanco como los inputs */
+  font-size: 14px; /* Un poco más pequeño para que quepa */
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  position: relative; /* Para ocultar el input real */
+  color: #333; /* Color de texto normal */
+}
+
+.date-picker-btn:hover {
+  background: #f8fafc;
+}
+
+/* Ocultar el input de fecha real */
+.date-picker-btn input[type="date"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0; /* Lo hace invisible */
+  cursor: pointer;
+}
+
+/* Estilo para el span que muestra la fecha */
+.date-picker-btn span {
+  pointer-events: none; /* Asegura que el clic llegue al input */
+}
+
+/* Cuando una fecha es seleccionada, el span se ve diferente */
+.date-picker-btn.has-value span {
+  color: var(--green-700); /* Ajuste de color */
+  font-weight: 600;
+}
+/* ****** FIN NUEVOS ESTILOS DE FILTRO ****** */
+
+
+#statusMsg {
+  /* margin-top: 10px; */ /* Quitado para moverlo fuera del card */
+  padding: 12px;
+  border-radius: 8px;
+  display: none; /* Oculto por defecto */
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+#statusMsg.show {
+  display: block; /* Se muestra con la clase 'show' */
+}
+#statusMsg.success {
+  background: #f0fdf4; /* Verde claro */
+  color: #15803d; /* Verde oscuro */
+}
+#statusMsg.error {
+  background: #fef2f2; /* Rojo claro */
+  color: #b91c1c; /* Rojo oscuro */
+  font-weight: 600;
+}
+
+/* small adjustments */
+.file-btn input[type="file"]{display:none} /* Oculta el input de archivo */
+.hidden{display:none}
+
+
+/* --- INICIO ESTILOS LOGIN/REGISTER ANIMADO (Paleta Verde) --- */
+
+/* Fondo de la página de login */
+.page-login {
+  background: var(--surface);
+}
+
+/* Contenedor principal de la animación, basado en tu solicitud */
+.page-login .wrapper {
+  position: relative;
+  /* Ancho más pequeño para un solo formulario a la vez */
+  width: 400px; 
+  max-width: 100%; /* Para que no se desborde en móviles */
+  /* height: 480px; -> CAMBIO: Altura flexible */
+  min-height: 480px;
+  background: var(--login-bg); /* Fondo verde oscuro */
+  border: 2px solid var(--login-accent); /* Borde verde claro */
+  overflow: hidden; /* Clave para la animación */
+  box-shadow: 0 0 25px var(--login-accent); /* Brillo verde claro */
+  margin: 20px auto; /* Centrar el wrapper */
+  border-radius: var(--card-radius);
+  color: var(--login-text); /* Texto blanco por defecto */
+  
+  /* --- CAMBIO: Ajustar altura dinámicamente --- */
+  height: 620px; /* Altura base para registro con foto */
+  transition: height 0.6s ease-in-out;
+}
+/* Ajustar altura cuando se muestra el login */
+.container:not(.active) .wrapper {
+  height: 480px;
+}
+
+
+/* Estilo base para ambos formularios (Login y Register) */
+.wrapper .form-box {
+  position: absolute; /* Posicionados para deslizarse */
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+  transition: transform 0.6s ease-in-out, opacity 0.5s ease;
+  backface-visibility: hidden; /* Evitar parpadeos */
+}
+.wrapper .form-box h3 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: var(--login-text);
+  text-align: center;
+  font-weight: 600;
+}
+
+/* --- ESTILOS DE FORMULARIO (Inputs) --- */
+.wrapper .form-box .field {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+/* Inputs estilo "línea inferior" */
+.wrapper .form-box input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--login-muted);
+  color: var(--login-text); /* Texto blanco al escribir */
+  border-radius: 0; /* Quitar bordes redondeados */
+  padding: 10px 4px; /* Ajustar padding */
+  font-size: 16px;
+  width: 100%; /* Asegurar ancho completo */
+}
+.wrapper .form-box input::placeholder {
+  color: var(--login-muted);
+  opacity: 0.7;
+}
+.wrapper .form-box input:focus {
+  outline: none;
+  border-bottom-color: var(--login-accent); /* Color al enfocar */
+}
+
+/* --- Centrar fila de botón --- */
+.wrapper .form-box .row {
+  justify-content: center; /* Centrar el botón */
+  margin-top: 10px;
+}
+
+/* --- BOTÓN PRIMARIO (Redondeado y centrado) --- */
+.wrapper .btn.primary {
+  background: linear-gradient(90deg, var(--green-500), var(--login-accent)); /* Ajuste de color VERDE */
+  border-radius: 25px; /* Botón redondeado */
+  border: none;
+  box-shadow: 0 0 10px rgba(127, 176, 231, 0.5); /* Brillo sutil */
+  font-weight: 600;
+  padding: 12px; /* Más padding */
+  transition: all 0.3s ease;
+  min-width: 180px; /* Ancho mínimo como en la imagen */
+  flex: none; /* Quitar .full behavior */
+  width: auto;
+}
+.wrapper .btn.primary:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 15px rgba(127, 176, 231, 0.8);
+}
+
+/* --- LINKS (Registrarse / Acceder) --- */
+.wrapper .form-box .login-register-link {
+  font-size: 14px;
+  color: var(--login-muted);
+  text-align: center;
+  margin-top: 20px;
+}
+.wrapper .form-box .login-register-link p {
+  margin: 0;
+}
+.wrapper .form-box .login-register-link .btn-link {
+  background: none;
+  border: none;
+  color: var(--login-accent); /* Color acento VERDE */
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 14px;
+}
+.wrapper .form-box .login-register-link .btn-link:hover {
+  text-decoration: underline;
+}
+
+
+/* --- LÓGICA DE ANIMACIÓN (Actualizada) --- */
+
+/* Estado inicial: LOGIN (visible) */
+.wrapper .form-box.login {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Estado inicial: REGISTER (oculto a la derecha) */
+.wrapper .form-box.register {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* --- ESTADO ACTIVO (Mostrando Register) --- */
+
+/* El JS añade .active a main.container */
+.container.active .wrapper .form-box.login {
+  /* Mover login a la izquierda y ocultar */
+  transform: translateX(-100%);
+  opacity: 0;
+  transition-delay: 0s;
+}
+
+.container.active .wrapper .form-box.register {
+  /* Mover register al centro */
+  transform: translateX(0);
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+
+/* --- INICIO ESTILOS MÓVILES LOGIN --- */
+@media (max-width: 480px) {
+  .page-login .brand {
+     padding-top: 10px; /* Más espacio arriba en móvil */
+  }
+
+  .page-login .wrapper {
+    /* El wrapper ya es 400px max-width, así que se adapta bien */
+    margin: 10px auto;
+    border-width: 1px;
+    box-shadow: 0 0 15px rgba(127, 176, 231, 0.4);
+    height: auto; /* Altura automática en móvil */
+    min-height: 620px; /* Altura mínima para registro */
+  }
+  
+  /* Corregir altura de login en móvil */
+  .container:not(.active) .wrapper {
+    height: auto;
+    min-height: 480px;
+  }
+  
+  .wrapper .form-box {
+    padding: 30px 25px; /* Menos padding en móvil */
+  }
+  
+  .wrapper .btn.primary {
+     min-width: 150px; /* Botón un poco más pequeño en móvil */
+  }
+}
+/* --- FIN ESTILOS MÓVILES LOGIN --- */
+
+/* --- FIN ESTILOS LOGIN/REGISTER REDISEÑADO --- */
+
+
+/* --- INICIO ESTILOS FOOTER Y PRIVACIDAD --- */
+.foot-legal {
+  text-align: center;
+  padding: 25px 15px; /* Más padding superior */
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  width: 100%;
+}
+.foot-legal .btn-link {
+  background: none;
+  border: none;
+  color: var(--green-500); /* Verde estándar de la app */
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: underline;
+}
+.foot-legal .btn-link:hover {
+  color: var(--green-dark); /* Ajuste de color */
+}
+
+/* Asegurar que el modal de privacidad se vea bien en la pág de login */
+.page-login .modal .modal-content {
+  color: #05203b; /* Texto oscuro normal, no blanco */
+  text-align: left;
+}
+.page-login .modal .modal-content h3 {
+  color: #05203b;
+  text-align: left;
+  margin-top: 0;
+}
+.page-login .modal .modal-content ul {
+  padding-left: 20px;
+}
+.page-login .modal .modal-content li {
+  margin-bottom: 8px;
+}
+/* --- FIN ESTILOS FOOTER Y PRIVACIDAD --- */
+
+/* --- INICIO ESTILOS CAMPO GUÍA Y BOTÓN ESCÁNER --- */
+.field-with-button {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+/* Quitar borde redondeado derecho al input de guía */
+.field-with-button input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    flex-grow: 1;
+}
+/* Estilo para el botón del escáner */
+.field-with-button .icon-btn {
+    /* Hacerlo más grande y de color azul */
+    background: #5078f2; /* Azul para el QR */
+    color: white;
+    padding: 10px; /* Ajuste para que se vea cuadrado */
+    height: 40px; 
+    width: 40px; 
+    border-radius: 0 8px 8px 0; /* Borde redondeado solo a la derecha */
+    flex-shrink: 0; /* Evitar que se encoja */
+    /* Estilo de QR */
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    /* Ajuste del icono SVG para que se centre */
+    display: grid; 
+    place-items: center;
+    font-size: 0; /* Ocultar font-size de btn para usar solo svg */
+}
+.field-with-button .icon-btn:hover {
+    background: #3b5fde; /* Azul más oscuro al pasar el ratón */
+}
+.field-with-button .icon-btn svg {
+    width: 24px; /* Tamaño del QR */
+    height: 24px;
+}
+/* --- FIN ESTILOS CAMPO GUÍA Y BOTÓN ESCÁNER --- */
+
